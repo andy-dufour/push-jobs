@@ -24,6 +24,10 @@ provides :push_jobs_service, platform: 'ubuntu' do |node|
   node['platform_version'].to_f < 15.10
 end
 
+provides :push_jobs_service, platform: %w(redhat centos) do |node|
+  node['platform_version'].to_i == 6
+end
+
 action :start do
   delete_runit
   create_init
@@ -31,6 +35,7 @@ action :start do
   service 'chef-push-jobs-client' do
     supports restart: true, status: true
     action :start
+    provider Chef::Provider::Service::Upstart
     subscribes :restart, "template[#{PushJobsHelper.config_path}]"
   end
 end
@@ -39,6 +44,7 @@ action :stop do
   service 'chef-push-jobs-client' do
     supports status: true
     action :stop
+    provider Chef::Provider::Service::Upstart
     only_if { ::File.exist?('/etc/init/chef-push-jobs-client.conf') }
   end
 end
@@ -47,6 +53,7 @@ action :restart do
   service 'chef-push-jobs-client' do
     supports restart: true, status: true
     action :restart
+    provider Chef::Provider::Service::Upstart
   end
 end
 
@@ -56,6 +63,7 @@ action :enable do
   service 'chef-push-jobs-client' do
     supports status: true
     action :enable
+    provider Chef::Provider::Service::Upstart
     only_if { ::File.exist?('/etc/init/chef-push-jobs-client.conf') }
     subscribes :restart, "template[#{PushJobsHelper.config_path}]"
   end
@@ -65,6 +73,7 @@ action :disable do
   service 'chef-push-jobs-client' do
     supports status: true
     action :disable
+    provider Chef::Provider::Service::Upstart
     only_if { ::File.exist?('/etc/init/chef-push-jobs-client.conf') }
   end
 end
@@ -76,6 +85,7 @@ action_class.class_eval do
     # service resource for notification
     service 'chef-push-jobs-client' do
       action :nothing
+      provider Chef::Provider::Service::Upstart
     end
 
     template '/etc/init/chef-push-jobs-client.conf' do
